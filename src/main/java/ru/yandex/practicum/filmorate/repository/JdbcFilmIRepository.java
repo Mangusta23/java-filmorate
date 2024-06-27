@@ -35,12 +35,13 @@ public class JdbcFilmIRepository implements IRepository<Film> {
         film.setMpa(new Mpa());
         film.getMpa().setId(resultSet.getInt("RATING_ID"));
         film.getMpa().setName(resultSet.getString("RATING_TITLE"));
+        film.setDirectorID(resultSet.getInt("DIRECTOR_ID"))
         return film;
     }
 
     @Override
     public Film create(Film film) {
-        String sqlQuery = "INSERT INTO FILM (NAME, DESCRIPTION, RELEASE_DATE, DURATION, RATING_ID) VALUES(?, ?, ?, ?, ?)";
+        String sqlQuery = "INSERT INTO FILM (NAME, DESCRIPTION, RELEASE_DATE, DURATION, RATING_ID, DIRECTOR_ID) VALUES(?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbc.update(connection -> {
@@ -50,6 +51,7 @@ public class JdbcFilmIRepository implements IRepository<Film> {
             preparedStatement.setDate(3, Date.valueOf(film.getReleaseDate()));
             preparedStatement.setInt(4, film.getDuration());
             preparedStatement.setInt(5, film.getMpa().getId());
+            preparedStatement.setInt(6, film.getDirectorID());
             return preparedStatement;
         }, keyHolder);
 
@@ -167,4 +169,31 @@ public class JdbcFilmIRepository implements IRepository<Film> {
                 "LIMIT ?;", JdbcFilmIRepository::createFilm, countFilm);
         return list;
     }
+
+    public List<Film> getAllDirectorsFilms(int directorID, String sortType) { // ИСПОЛЬЗУЕТСЯ В FILMCONTROLLER
+        if (sortType == "likes") {
+            sortType = "(SELECT COUNT(FILM_ID) " +
+                    "FROM LIKES;)"
+        }
+        List<Film> list = jdbc.query("SELECT FILM_ID, " +
+                "NAME, " +
+                "DESCRIPTION, " +
+                "RELEASE_DATE, " +
+                "DURATION, " +
+                "RATING_ID, " +
+                "DIRECTOR_ID " +
+                "FROM FILM " +
+                "WHERE DIRECTOR_ID = " + directorID +
+                "ORDER_BY " + sortType + ";")
+    }
+
+    public List<Film> getAllDirectors() {
+        List<Film> list = jdbc.query("F.DIRECTOR_ID" +
+                "D.DIRECTOR_NAME"
+                "FROM FILM AS F " +
+                "LEFT JOIN DIRECTORS AS D ON F.DIRECTORS_ID = D.DIRECTORS_ID" +
+                "GROUP BY F.DIECTORS_ID")
+    }
+
+    public Film
 }
